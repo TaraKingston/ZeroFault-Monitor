@@ -1,6 +1,15 @@
 package com.zerofault.monitor;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class Main {
+    //documents the alerts give name
+    private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private static void alert(String message) {
+        System.out.println("[" + LocalDateTime.now().format(TS) + "] ALERT: " + message);
+    }
     public static void main(String[] args) throws InterruptedException {
 
         // This object talks to OSHI and reads CPU/RAM data
