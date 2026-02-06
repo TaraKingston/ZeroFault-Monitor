@@ -6,6 +6,11 @@ import oshi.hardware.GlobalMemory;
 import oshi.software.os.OperatingSystem;
 import oshi.hardware.NetworkIF;
 import java.util.List;
+import oshi.software.os.FileSystem;
+import oshi.software.os.OSFileStore;
+import java.util.Map;
+import java.util.LinkedHashMap;
+
 
 public class MetricsCollector {
 
@@ -25,6 +30,8 @@ public class MetricsCollector {
         processor = si.getHardware().getProcessor();
         memory = si.getHardware().getMemory();
         prevTicks = processor.getSystemCpuLoadTicks();
+
+        //collector now has access to disk processes and network interfaces
         os = si.getOperatingSystem();
         nifs = si.getHardware().getNetworkIFs();
     }
@@ -39,5 +46,24 @@ public class MetricsCollector {
         long total = memory.getTotal();
         long available = memory.getAvailable();
         return (1.0 - (double) available / total) * 100.0;
+    }
+
+    public Map<String, Double> getDiskUsagePercentPerDrive() {
+        FileSystem fs = os.getFileSystem();
+        Map<String, Double> result = new LinkedHashMap<>();
+
+        for (OSFileStore store : fs.getFileStores()) {
+            long total = store.getTotalSpace();
+            long usable = store.getUsableSpace();
+            if (total <= 0) continue; // ignore weird/virtual entries
+
+            double usedPct = (1.0 - (double) usable / total) * 100.0;
+
+            String drive = store.getMount(); // usually "C:\"
+            if (drive == null || drive.isBlank()) drive = store.getName();
+
+            result.put(drive, usedPct);
+        }
+        return result;
     }
 }
