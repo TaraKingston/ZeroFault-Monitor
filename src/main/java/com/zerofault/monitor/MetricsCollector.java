@@ -55,15 +55,49 @@ public class MetricsCollector {
         for (OSFileStore store : fs.getFileStores()) {
             long total = store.getTotalSpace();
             long usable = store.getUsableSpace();
-            if (total <= 0) continue; // ignore weird/virtual entries
+            if (total <= 0) continue; // ignore weird entries
 
             double usedPct = (1.0 - (double) usable / total) * 100.0;
 
-            String drive = store.getMount(); // usually "C:\"
+            String drive = store.getMount(); //
             if (drive == null || drive.isBlank()) drive = store.getName();
 
             result.put(drive, usedPct);
         }
         return result;
     }
+
+    //returns download and upload rate
+    public double[] getNetworkKBps() {
+        long now = System.currentTimeMillis();
+        long rx = 0;
+        long tx = 0;
+
+        for (NetworkIF nif : nifs) {
+            nif.updateAttributes(); // refresh counters
+            rx += nif.getBytesRecv();
+            tx += nif.getBytesSent();
+        }
+
+        //initialize baseline, return 0 rates
+        if (prevRXBytes < 0 || prevTXBytes < 0 || prevNETTimeMs < 0) {
+            prevRXBytes = rx;
+            prevTXBytes = tx;
+            prevNETTimeMs = now;
+            return new double[]{0.0, 0.0};
+        }
+        //rate = (currenttotak -previoustotal)/timedelta
+        double seconds = (now - prevNETTimeMs) / 1000.0;
+        if (seconds <= 0) seconds = 1.0;
+
+        double rxKBps = ((rx - prevRXBytes) / 1024.0) / seconds;
+        double txKBps = ((tx - prevTXBytes) / 1024.0) / seconds;
+
+        prevRXBytes = rx;
+        prevTXBytes = tx;
+        prevNETTimeMs = now;
+
+        return new double[]{rxKBps, txKBps};
+    }
+
 }
