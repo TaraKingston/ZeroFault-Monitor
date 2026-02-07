@@ -10,6 +10,8 @@ import oshi.software.os.FileSystem;
 import oshi.software.os.OSFileStore;
 import java.util.Map;
 import java.util.LinkedHashMap;
+import oshi.software.os.OSProcess;
+
 
 
 public class MetricsCollector {
@@ -99,5 +101,15 @@ public class MetricsCollector {
 
         return new double[]{rxKBps, txKBps};
     }
+    public List<OSProcess> getTopCpuProcesses(int limit) {
+        return os.getProcesses(null, OperatingSystem.ProcessSorting.CPU_DESC, limit);
+    }
 
+    public List<OSProcess> getTopMemoryProcesses(int limit) {
+        return os.getProcesses(null, OperatingSystem.ProcessSorting.RSS_DESC, limit);
+    }
+
+    public long getTotalMemoryBytes() {
+        return memory.getTotal();
+    }
 }
